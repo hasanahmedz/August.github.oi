@@ -1,0 +1,771 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private authenticated user settings and workspace environment state for J.A.R.V.I.S.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "personaId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "aiMode": {
+          "type": "string",
+          "enum": ["FAST", "STANDARD", "PRO", "EXPERT"]
+        },
+        "voiceName": {
+          "type": "string",
+          "enum": ["Charon", "Fenrir", "Kore", "Puck", "Zephyr"]
+        },
+        "continuousMode": {
+          "type": "boolean"
+        },
+        "memoryEnabled": {
+          "type": "boolean"
+        },
+        "lightBrightness": {
+          "type": "number"
+        },
+        "lightTemperature": {
+          "type": "string",
+          "enum": ["warm", "daylight", "cool"]
+        },
+        "thermostatCelsius": {
+          "type": "number"
+        },
+        "focusMode": {
+          "type": "boolean"
+        },
+        "agentVoiceProfileId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "agentVoiceStyle": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "voiceVolume": {
+          "type": "number"
+        },
+        "voiceSpeed": {
+          "type": "number"
+        },
+        "voicePitchSemitones": {
+          "type": "number"
+        },
+        "proactiveVoiceAlerts": {
+          "type": "boolean"
+        },
+        "spokenToolUpdates": {
+          "type": "boolean"
+        },
+        "soundFeedbackEnabled": {
+          "type": "boolean"
+        },
+        "desktopAwarenessEnabled": {
+          "type": "boolean"
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "enum": ["en-US", "en-IN", "bn-BD"]
+        },
+        "voiceMoodDefault": {
+          "type": "string",
+          "enum": ["normal", "sad", "angry", "excited", "proud", "serious", "greeting"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "aiMode",
+        "voiceName",
+        "continuousMode",
+        "memoryEnabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "MemoryEntry": {
+      "title": "MemoryEntry",
+      "description": "User-approved long-term personal memory stored strictly under the owning user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "preference",
+            "note",
+            "project",
+            "command",
+            "assistant_preference",
+            "summary",
+            "knowledge",
+            "task_context",
+            "context",
+            "contact"
+          ]
+        },
+        "approved": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "key",
+        "value",
+        "category",
+        "approved",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TaskEntry": {
+      "title": "TaskEntry",
+      "description": "Personal task or reminder managed by voice or UI.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "dueLabel": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "title", "priority", "completed", "createdAt", "updatedAt"]
+    },
+    "HistoryEntry": {
+      "title": "HistoryEntry",
+      "description": "Voice/search command log with AI mode, memories used, and rerun count.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "responsePreview": {
+          "type": "string",
+          "maxLength": 1500
+        },
+        "aiMode": {
+          "type": "string",
+          "enum": ["FAST", "STANDARD", "PRO", "EXPERT"]
+        },
+        "memoriesUsed": {
+          "type": "array",
+          "maxLength": 15
+        },
+        "runCount": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "lastRunAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "query", "aiMode", "runCount", "createdAt", "lastRunAt"]
+    },
+    "MonitorTopicEntry": {
+      "title": "MonitorTopicEntry",
+      "description": "Proactive internet topic watchlist persisted strictly under the owning user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "query": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "category": {
+          "type": "string",
+          "enum": ["gaming", "movies", "tech", "general"]
+        },
+        "officialOnly": {
+          "type": "boolean"
+        },
+        "intervalMinutes": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "paused"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "query",
+        "label",
+        "category",
+        "officialOnly",
+        "intervalMinutes",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "KnowledgeDoc": {
+      "title": "KnowledgeDoc",
+      "description": "Uploaded document metadata indexed in the user's private World Knowledge RAG vault.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "mimeType": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "byteSize": {
+          "type": "number"
+        },
+        "chunkCount": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["indexing", "ready", "failed"]
+        },
+        "checksum": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "fileName",
+        "mimeType",
+        "byteSize",
+        "chunkCount",
+        "status",
+        "enabled",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "KnowledgeChunk": {
+      "title": "KnowledgeChunk",
+      "description": "Vector-embedded text chunk derived from an uploaded KnowledgeDoc.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "docId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "docName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 180
+        },
+        "sectionLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "chunkIndex": {
+          "type": "number"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3500
+        },
+        "embedding": {
+          "type": "array",
+          "maxLength": 4096
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "docId",
+        "docName",
+        "sectionLabel",
+        "chunkIndex",
+        "text",
+        "embedding",
+        "createdAt"
+      ]
+    },
+    "ConnectedIntegration": {
+      "title": "ConnectedIntegration",
+      "description": "Non-secret integration pairing metadata (Home Assistant / Companion) owned by the user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["home_assistant", "windows_companion"]
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "baseUrl": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "status": {
+          "type": "string",
+          "enum": ["connected", "disconnected", "error"]
+        },
+        "entityCount": {
+          "type": "number"
+        },
+        "lastVerifiedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "provider",
+        "label",
+        "status",
+        "entityCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Verified command and tool execution audit record owned by the user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "intent": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "local",
+            "companion",
+            "live",
+            "brain",
+            "scheduler",
+            "home_assistant",
+            "rag",
+            "maps",
+            "intelligence",
+            "skills",
+            "dev",
+            "bugfix",
+            "creative",
+            "workspace",
+            "calling",
+            "workflow"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["EXECUTING", "SCHEDULED", "COMPLETED", "FAILED", "CANCELLED"]
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "verified": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "command",
+        "intent",
+        "source",
+        "status",
+        "detail",
+        "verified",
+        "createdAt"
+      ]
+    },
+    "SkillEntry": {
+      "title": "SkillEntry",
+      "description": "User-managed dynamic AI skill module with natural-language instructions and test state.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "category": { "type": "string", "enum": ["automation", "coding", "creative", "personal", "pc_control"] },
+        "triggerPattern": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "instructions": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "enabled": { "type": "boolean" },
+        "activeVersion": { "type": "number" },
+        "testStatus": { "type": "string", "enum": ["untested", "passed", "failed"] },
+        "lastTestNote": { "type": "string", "maxLength": 400 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId",
+        "name",
+        "description",
+        "category",
+        "triggerPattern",
+        "instructions",
+        "enabled",
+        "activeVersion",
+        "testStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "SkillVersion": {
+      "title": "SkillVersion",
+      "description": "Immutable version snapshot for a user-owned SkillEntry enabling rollback.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "skillId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "version": { "type": "number" },
+        "instructions": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "triggerPattern": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "changelog": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "skillId", "version", "instructions", "triggerPattern", "changelog", "createdAt"]
+    },
+    "ProjectRecord": {
+      "title": "ProjectRecord",
+      "description": "Tracked software project managed inside Development Studio and Project Manager.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "rootPath": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "language": { "type": "string", "enum": ["typescript", "javascript", "python", "java", "cpp", "web", "android", "other"] },
+        "framework": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "status": { "type": "string", "enum": ["active", "archived"] },
+        "lastTestStatus": { "type": "string", "enum": ["unknown", "passed", "failed"] },
+        "lastTestSummary": { "type": "string", "maxLength": 500 },
+        "snapshotCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "rootPath", "language", "framework", "status", "lastTestStatus", "snapshotCount", "createdAt", "updatedAt"]
+    },
+    "BugReport": {
+      "title": "BugReport",
+      "description": "Root-cause diagnosis, backup patch, and verification status from Bug Fixer.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "projectId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 180 },
+        "errorInput": { "type": "string", "minLength": 1, "maxLength": 3000 },
+        "rootCause": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["diagnosed", "patched", "verified", "failed", "rolled_back"] },
+        "verificationSummary": { "type": "string", "maxLength": 1000 },
+        "regressionRisk": { "type": "string", "enum": ["low", "medium", "high"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "projectId", "title", "errorInput", "rootCause", "status", "verificationSummary", "regressionRisk", "createdAt", "updatedAt"]
+    },
+    "CreativeAsset": {
+      "title": "CreativeAsset",
+      "description": "Lightweight procedural blueprint for 3D, 2D, and 1D Creation Studios.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "dimension": { "type": "string", "enum": ["3d", "2d", "1d"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "category": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "exportFormat": { "type": "string", "enum": ["glb", "gltf", "obj", "png", "svg", "json", "csv"] },
+        "specJson": { "type": "string", "minLength": 2, "maxLength": 16000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "dimension", "title", "category", "exportFormat", "specJson", "createdAt", "updatedAt"]
+    },
+    "ContactRecord": {
+      "title": "ContactRecord",
+      "description": "PII-isolated personal contact record with call consent and disambiguation aliases.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "phone": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "email": { "type": "string", "maxLength": 140 },
+        "relation": { "type": "string", "maxLength": 80 },
+        "aliases": { "type": "string", "maxLength": 160 },
+        "consentToCall": { "type": "boolean" },
+        "vip": { "type": "boolean" },
+        "source": { "type": "string", "enum": ["local", "google_contacts"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "phone", "consentToCall", "vip", "source", "createdAt", "updatedAt"]
+    },
+    "CallLog": {
+      "title": "CallLog",
+      "description": "PII-isolated outgoing/incoming call handoff audit log.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "contactName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "phone": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "direction": { "type": "string", "enum": ["outgoing", "incoming"] },
+        "method": { "type": "string", "enum": ["phone_link", "tel_uri", "incoming_webhook", "manual"] },
+        "status": { "type": "string", "enum": ["initiated", "answered", "declined", "busy_replied", "missed"] },
+        "note": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "contactName", "phone", "direction", "method", "status", "createdAt"]
+    },
+    "AutomationWorkflowEntry": {
+      "title": "AutomationWorkflowEntry",
+      "description": "Custom automation rule linking triggers to verified assistant actions.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "triggerType": { "type": "string", "enum": ["voice_phrase", "schedule", "monitor_update", "incoming_call", "manual"] },
+        "triggerValue": { "type": "string", "minLength": 1, "maxLength": 240 },
+        "actionType": { "type": "string", "enum": ["run_skill", "speak_alert", "companion_action", "open_studio", "create_task"] },
+        "actionPayload": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "enabled": { "type": "boolean" },
+        "runCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "triggerType", "triggerValue", "actionType", "actionPayload", "enabled", "runCount", "createdAt", "updatedAt"]
+    },
+    "MultiAgentRunEntry": {
+      "title": "MultiAgentRunEntry",
+      "description": "Autonomous multi-agent task decomposition and execution record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "goal": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "status": { "type": "string", "enum": ["planning", "running", "completed", "failed"] },
+        "activeRole": { "type": "string", "enum": ["planner", "coder", "debugger", "designer", "researcher"] },
+        "stepCount": { "type": "number" },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 1500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "goal", "status", "activeRole", "stepCount", "summary", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Authenticated user profile, preferences, AI mode, and workspace environment settings."
+    },
+    "/users/{userId}/memories/{memoryId}": {
+      "schema": { "$ref": "#/entities/MemoryEntry" },
+      "description": "User-isolated personal memory facts and approved context notes."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/TaskEntry" },
+      "description": "User-isolated personal task and reminder queue."
+    },
+    "/users/{userId}/history/{historyId}": {
+      "schema": { "$ref": "#/entities/HistoryEntry" },
+      "description": "User-isolated command and search history entries."
+    },
+    "/users/{userId}/monitors/{monitorId}": {
+      "schema": { "$ref": "#/entities/MonitorTopicEntry" },
+      "description": "User-isolated proactive internet monitoring topics."
+    },
+    "/users/{userId}/knowledgeDocs/{docId}": {
+      "schema": { "$ref": "#/entities/KnowledgeDoc" },
+      "description": "User-isolated uploaded Knowledge Vault documents."
+    },
+    "/users/{userId}/knowledgeChunks/{chunkId}": {
+      "schema": { "$ref": "#/entities/KnowledgeChunk" },
+      "description": "User-isolated embedded text chunks linked to KnowledgeDoc."
+    },
+    "/users/{userId}/integrations/{integrationId}": {
+      "schema": { "$ref": "#/entities/ConnectedIntegration" },
+      "description": "User-isolated non-secret Smart Home and Companion integration metadata."
+    },
+    "/users/{userId}/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "User-isolated execution audit logs."
+    },
+    "/users/{userId}/skills/{skillId}": {
+      "schema": { "$ref": "#/entities/SkillEntry" },
+      "description": "User-isolated dynamic AI skill definitions."
+    },
+    "/users/{userId}/skills/{skillId}/versions/{versionId}": {
+      "schema": { "$ref": "#/entities/SkillVersion" },
+      "description": "Immutable rollback snapshots for each SkillEntry."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/ProjectRecord" },
+      "description": "User-isolated software projects registered in Dev Studio."
+    },
+    "/users/{userId}/bugReports/{reportId}": {
+      "schema": { "$ref": "#/entities/BugReport" },
+      "description": "User-isolated bug diagnoses, patches, and test verification records."
+    },
+    "/users/{userId}/creativeAssets/{assetId}": {
+      "schema": { "$ref": "#/entities/CreativeAsset" },
+      "description": "User-isolated 3D, 2D, and 1D creative studio specifications."
+    },
+    "/users/{userId}/contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/ContactRecord" },
+      "description": "User-isolated consented contacts for Smart Calling."
+    },
+    "/users/{userId}/callLogs/{callId}": {
+      "schema": { "$ref": "#/entities/CallLog" },
+      "description": "User-isolated incoming and outgoing call handoff logs."
+    },
+    "/users/{userId}/workflows/{workflowId}": {
+      "schema": { "$ref": "#/entities/AutomationWorkflowEntry" },
+      "description": "User-isolated trigger-action automation workflows."
+    },
+    "/users/{userId}/agentRuns/{runId}": {
+      "schema": { "$ref": "#/entities/MultiAgentRunEntry" },
+      "description": "User-isolated multi-agent task execution traces."
+    }
+  }
+}

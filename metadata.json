@@ -1,0 +1,6 @@
+{
+  "name": "Jarvis Blueprint & Live Lab",
+  "description": "Interactive architecture guide, live Gemini-powered personal AI assistant sandbox with function calling and voice I/O, and starter code generator.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

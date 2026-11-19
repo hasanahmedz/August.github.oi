@@ -1,0 +1,1173 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    function isValidAiMode(mode) {
+      return mode in ['FAST', 'STANDARD', 'PRO', 'EXPERT'];
+    }
+
+    function isValidVoice(voice) {
+      return voice in ['Charon', 'Fenrir', 'Kore', 'Puck', 'Zephyr'];
+    }
+
+    function isValidLightTemp(temp) {
+      return temp in ['warm', 'daylight', 'cool'];
+    }
+
+    function isValidMemoryCategory(cat) {
+      return cat in [
+        'preference',
+        'note',
+        'project',
+        'command',
+        'assistant_preference',
+        'summary',
+        'knowledge',
+        'task_context',
+        'context',
+        'contact'
+      ];
+    }
+
+    function isValidTaskPriority(priority) {
+      return priority in ['low', 'medium', 'high'];
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'aiMode',
+          'voiceName',
+          'continuousMode',
+          'memoryEnabled',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'displayName',
+          'personaId',
+          'aiMode',
+          'voiceName',
+          'continuousMode',
+          'memoryEnabled',
+          'lightBrightness',
+          'lightTemperature',
+          'thermostatCelsius',
+          'focusMode',
+          'agentVoiceProfileId',
+          'agentVoiceStyle',
+          'voiceVolume',
+          'voiceSpeed',
+          'voicePitchSemitones',
+          'proactiveVoiceAlerts',
+          'spokenToolUpdates',
+          'soundFeedbackEnabled',
+          'desktopAwarenessEnabled',
+          'preferredLanguage',
+          'voiceMoodDefault',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 120))
+        && (!('personaId' in data) || (data.personaId is string && data.personaId.size() <= 64))
+        && isValidAiMode(data.aiMode)
+        && isValidVoice(data.voiceName)
+        && data.continuousMode is bool
+        && data.memoryEnabled is bool
+        && (!('lightBrightness' in data) || (data.lightBrightness is number && data.lightBrightness >= 0 && data.lightBrightness <= 100))
+        && (!('lightTemperature' in data) || isValidLightTemp(data.lightTemperature))
+        && (!('thermostatCelsius' in data) || (data.thermostatCelsius is number && data.thermostatCelsius >= 16 && data.thermostatCelsius <= 28))
+        && (!('focusMode' in data) || data.focusMode is bool)
+        && (!('agentVoiceProfileId' in data) || (data.agentVoiceProfileId is string && data.agentVoiceProfileId.size() <= 64))
+        && (!('agentVoiceStyle' in data) || (data.agentVoiceStyle is string && data.agentVoiceStyle.size() <= 300))
+        && (!('voiceVolume' in data) || (data.voiceVolume is number && data.voiceVolume >= 0 && data.voiceVolume <= 1))
+        && (!('voiceSpeed' in data) || (data.voiceSpeed is number && data.voiceSpeed >= 0.75 && data.voiceSpeed <= 1.4))
+        && (!('voicePitchSemitones' in data) || (data.voicePitchSemitones is number && data.voicePitchSemitones >= -6 && data.voicePitchSemitones <= 6))
+        && (!('proactiveVoiceAlerts' in data) || data.proactiveVoiceAlerts is bool)
+        && (!('spokenToolUpdates' in data) || data.spokenToolUpdates is bool)
+        && (!('soundFeedbackEnabled' in data) || data.soundFeedbackEnabled is bool)
+        && (!('desktopAwarenessEnabled' in data) || data.desktopAwarenessEnabled is bool)
+        && (!('preferredLanguage' in data) || data.preferredLanguage in ['en-US', 'en-IN', 'bn-BD'])
+        && (!('voiceMoodDefault' in data) || data.voiceMoodDefault in ['normal', 'sad', 'angry', 'excited', 'proud', 'serious', 'greeting'])
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMemoryEntry(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'key',
+          'value',
+          'category',
+          'approved',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'key',
+          'value',
+          'category',
+          'approved',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.key is string && data.key.size() >= 1 && data.key.size() <= 120
+        && data.value is string && data.value.size() >= 1 && data.value.size() <= 2000
+        && isValidMemoryCategory(data.category)
+        && data.approved is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTaskEntry(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'title',
+          'priority',
+          'completed',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'title',
+          'priority',
+          'completed',
+          'dueLabel',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 240
+        && isValidTaskPriority(data.priority)
+        && data.completed is bool
+        && (!('dueLabel' in data) || (data.dueLabel is string && data.dueLabel.size() <= 80))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidHistoryEntry(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'query',
+          'aiMode',
+          'runCount',
+          'createdAt',
+          'lastRunAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'query',
+          'responsePreview',
+          'aiMode',
+          'memoriesUsed',
+          'runCount',
+          'createdAt',
+          'lastRunAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.query is string && data.query.size() >= 1 && data.query.size() <= 1000
+        && (!('responsePreview' in data) || (data.responsePreview is string && data.responsePreview.size() <= 1500))
+        && isValidAiMode(data.aiMode)
+        && (!('memoriesUsed' in data) || (
+          data.memoriesUsed is list
+          && data.memoriesUsed.size() <= 15
+          && (data.memoriesUsed.size() == 0 || data.memoriesUsed[0] is string)
+        ))
+        && data.runCount is number && data.runCount >= 1 && data.runCount <= 100000
+        && data.createdAt is timestamp
+        && data.lastRunAt is timestamp;
+    }
+
+    function isValidMonitorTopicEntry(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'query',
+          'label',
+          'category',
+          'officialOnly',
+          'intervalMinutes',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'query',
+          'label',
+          'category',
+          'officialOnly',
+          'intervalMinutes',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.query is string && data.query.size() >= 1 && data.query.size() <= 240
+        && data.label is string && data.label.size() >= 1 && data.label.size() <= 120
+        && data.category in ['gaming', 'movies', 'tech', 'general']
+        && data.officialOnly is bool
+        && data.intervalMinutes is number && data.intervalMinutes >= 5 && data.intervalMinutes <= 1440
+        && data.status in ['active', 'paused']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidKnowledgeDoc(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'fileName',
+          'mimeType',
+          'byteSize',
+          'chunkCount',
+          'status',
+          'enabled',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'fileName',
+          'mimeType',
+          'byteSize',
+          'chunkCount',
+          'status',
+          'checksum',
+          'enabled',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 180
+        && data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 100
+        && data.byteSize is number && data.byteSize >= 0 && data.byteSize <= 50000000
+        && data.chunkCount is number && data.chunkCount >= 0 && data.chunkCount <= 2000
+        && data.status in ['indexing', 'ready', 'failed']
+        && (!('checksum' in data) || (data.checksum is string && data.checksum.size() <= 128))
+        && data.enabled is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidKnowledgeChunk(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'docId',
+          'docName',
+          'sectionLabel',
+          'chunkIndex',
+          'text',
+          'embedding',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'docId',
+          'docName',
+          'sectionLabel',
+          'chunkIndex',
+          'text',
+          'embedding',
+          'createdAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && isValidId(data.docId)
+        && data.docName is string && data.docName.size() >= 1 && data.docName.size() <= 180
+        && data.sectionLabel is string && data.sectionLabel.size() >= 1 && data.sectionLabel.size() <= 120
+        && data.chunkIndex is number && data.chunkIndex >= 0 && data.chunkIndex <= 2000
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 3500
+        && data.embedding is list
+        && data.embedding.size() >= 1
+        && data.embedding.size() <= 4096
+        && data.embedding[0] is number
+        && data.createdAt is timestamp;
+    }
+
+    function isValidConnectedIntegration(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'provider',
+          'label',
+          'status',
+          'entityCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'provider',
+          'label',
+          'baseUrl',
+          'status',
+          'entityCount',
+          'lastVerifiedAt',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.provider in ['home_assistant', 'windows_companion']
+        && data.label is string && data.label.size() >= 1 && data.label.size() <= 120
+        && (!('baseUrl' in data) || (data.baseUrl is string && data.baseUrl.size() <= 300))
+        && data.status in ['connected', 'disconnected', 'error']
+        && data.entityCount is number && data.entityCount >= 0 && data.entityCount <= 5000
+        && (!('lastVerifiedAt' in data) || (data.lastVerifiedAt is timestamp || data.lastVerifiedAt is string))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAuditLog(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'command',
+          'intent',
+          'source',
+          'status',
+          'detail',
+          'verified',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'command',
+          'intent',
+          'source',
+          'status',
+          'detail',
+          'verified',
+          'createdAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.command is string && data.command.size() >= 1 && data.command.size() <= 300
+        && data.intent is string && data.intent.size() >= 1 && data.intent.size() <= 120
+        && data.source in [
+          'local',
+          'companion',
+          'live',
+          'brain',
+          'scheduler',
+          'home_assistant',
+          'rag',
+          'maps',
+          'intelligence',
+          'skills',
+          'dev',
+          'bugfix',
+          'creative',
+          'workspace',
+          'calling',
+          'workflow'
+        ]
+        && data.status in ['EXECUTING', 'SCHEDULED', 'COMPLETED', 'FAILED', 'CANCELLED']
+        && data.detail is string && data.detail.size() >= 1 && data.detail.size() <= 1000
+        && data.verified is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidSkillEntry(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'name',
+          'description',
+          'category',
+          'triggerPattern',
+          'instructions',
+          'enabled',
+          'activeVersion',
+          'testStatus',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'name',
+          'description',
+          'category',
+          'triggerPattern',
+          'instructions',
+          'enabled',
+          'activeVersion',
+          'testStatus',
+          'lastTestNote',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 500
+        && data.category in ['automation', 'coding', 'creative', 'personal', 'pc_control']
+        && data.triggerPattern is string && data.triggerPattern.size() >= 1 && data.triggerPattern.size() <= 200
+        && data.instructions is string && data.instructions.size() >= 1 && data.instructions.size() <= 4000
+        && data.enabled is bool
+        && data.activeVersion is number && data.activeVersion >= 1 && data.activeVersion <= 10000
+        && data.testStatus in ['untested', 'passed', 'failed']
+        && (!('lastTestNote' in data) || (data.lastTestNote is string && data.lastTestNote.size() <= 400))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSkillVersion(data, userId, skillId) {
+      return data.keys().hasAll([
+          'userId',
+          'skillId',
+          'version',
+          'instructions',
+          'triggerPattern',
+          'changelog',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'skillId',
+          'version',
+          'instructions',
+          'triggerPattern',
+          'changelog',
+          'createdAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && isValidId(data.skillId)
+        && data.skillId == skillId
+        && data.version is number && data.version >= 1 && data.version <= 10000
+        && data.instructions is string && data.instructions.size() >= 1 && data.instructions.size() <= 4000
+        && data.triggerPattern is string && data.triggerPattern.size() >= 1 && data.triggerPattern.size() <= 200
+        && data.changelog is string && data.changelog.size() >= 1 && data.changelog.size() <= 300
+        && data.createdAt is timestamp;
+    }
+
+    function isValidProjectRecord(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'name',
+          'rootPath',
+          'language',
+          'framework',
+          'status',
+          'lastTestStatus',
+          'snapshotCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'name',
+          'rootPath',
+          'language',
+          'framework',
+          'status',
+          'lastTestStatus',
+          'lastTestSummary',
+          'snapshotCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.rootPath is string && data.rootPath.size() >= 1 && data.rootPath.size() <= 300
+        && data.language in ['typescript', 'javascript', 'python', 'java', 'cpp', 'web', 'android', 'other']
+        && data.framework is string && data.framework.size() >= 1 && data.framework.size() <= 80
+        && data.status in ['active', 'archived']
+        && data.lastTestStatus in ['unknown', 'passed', 'failed']
+        && (!('lastTestSummary' in data) || (data.lastTestSummary is string && data.lastTestSummary.size() <= 500))
+        && data.snapshotCount is number && data.snapshotCount >= 0 && data.snapshotCount <= 100000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBugReport(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'projectId',
+          'title',
+          'errorInput',
+          'rootCause',
+          'status',
+          'verificationSummary',
+          'regressionRisk',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'projectId',
+          'title',
+          'errorInput',
+          'rootCause',
+          'status',
+          'verificationSummary',
+          'regressionRisk',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && isValidId(data.projectId)
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 180
+        && data.errorInput is string && data.errorInput.size() >= 1 && data.errorInput.size() <= 3000
+        && data.rootCause is string && data.rootCause.size() >= 1 && data.rootCause.size() <= 2000
+        && data.status in ['diagnosed', 'patched', 'verified', 'failed', 'rolled_back']
+        && data.verificationSummary is string && data.verificationSummary.size() <= 1000
+        && data.regressionRisk in ['low', 'medium', 'high']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCreativeAsset(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'dimension',
+          'title',
+          'category',
+          'exportFormat',
+          'specJson',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'dimension',
+          'title',
+          'category',
+          'exportFormat',
+          'specJson',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.dimension in ['3d', '2d', '1d']
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 140
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 80
+        && data.exportFormat in ['glb', 'gltf', 'obj', 'png', 'svg', 'json', 'csv']
+        && data.specJson is string && data.specJson.size() >= 2 && data.specJson.size() <= 16000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidContactRecord(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'name',
+          'phone',
+          'consentToCall',
+          'vip',
+          'source',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'name',
+          'phone',
+          'email',
+          'relation',
+          'aliases',
+          'consentToCall',
+          'vip',
+          'source',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 40
+        && (!('email' in data) || (data.email is string && data.email.size() <= 140))
+        && (!('relation' in data) || (data.relation is string && data.relation.size() <= 80))
+        && (!('aliases' in data) || (data.aliases is string && data.aliases.size() <= 160))
+        && data.consentToCall is bool
+        && data.vip is bool
+        && data.source in ['local', 'google_contacts']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCallLog(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'contactName',
+          'phone',
+          'direction',
+          'method',
+          'status',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'contactName',
+          'phone',
+          'direction',
+          'method',
+          'status',
+          'note',
+          'createdAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.contactName is string && data.contactName.size() >= 1 && data.contactName.size() <= 120
+        && data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 40
+        && data.direction in ['outgoing', 'incoming']
+        && data.method in ['phone_link', 'tel_uri', 'incoming_webhook', 'manual']
+        && data.status in ['initiated', 'answered', 'declined', 'busy_replied', 'missed']
+        && (!('note' in data) || (data.note is string && data.note.size() <= 300))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidWorkflowEntry(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'name',
+          'triggerType',
+          'triggerValue',
+          'actionType',
+          'actionPayload',
+          'enabled',
+          'runCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'name',
+          'triggerType',
+          'triggerValue',
+          'actionType',
+          'actionPayload',
+          'enabled',
+          'runCount',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 140
+        && data.triggerType in ['voice_phrase', 'schedule', 'monitor_update', 'incoming_call', 'manual']
+        && data.triggerValue is string && data.triggerValue.size() >= 1 && data.triggerValue.size() <= 240
+        && data.actionType in ['run_skill', 'speak_alert', 'companion_action', 'open_studio', 'create_task']
+        && data.actionPayload is string && data.actionPayload.size() >= 1 && data.actionPayload.size() <= 600
+        && data.enabled is bool
+        && data.runCount is number && data.runCount >= 0 && data.runCount <= 1000000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAgentRun(data, userId) {
+      return data.keys().hasAll([
+          'userId',
+          'goal',
+          'status',
+          'activeRole',
+          'stepCount',
+          'summary',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId',
+          'goal',
+          'status',
+          'activeRole',
+          'stepCount',
+          'summary',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.userId)
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.goal is string && data.goal.size() >= 1 && data.goal.size() <= 400
+        && data.status in ['planning', 'running', 'completed', 'failed']
+        && data.activeRole in ['planner', 'coder', 'debugger', 'designer', 'researcher']
+        && data.stepCount is number && data.stepCount >= 1 && data.stepCount <= 50
+        && data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 1500
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName',
+          'personaId',
+          'aiMode',
+          'voiceName',
+          'continuousMode',
+          'memoryEnabled',
+          'lightBrightness',
+          'lightTemperature',
+          'thermostatCelsius',
+          'focusMode',
+          'agentVoiceProfileId',
+          'agentVoiceStyle',
+          'voiceVolume',
+          'voiceSpeed',
+          'voicePitchSemitones',
+          'proactiveVoiceAlerts',
+          'spokenToolUpdates',
+          'soundFeedbackEnabled',
+          'desktopAwarenessEnabled',
+          'preferredLanguage',
+          'voiceMoodDefault',
+          'updatedAt'
+        ]);
+      allow delete: if isOwner(userId);
+
+      match /memories/{memoryId} {
+        allow get: if isOwner(userId) && isValidId(memoryId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(memoryId)
+          && isValidMemoryEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(memoryId)
+          && isValidMemoryEntry(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'key',
+            'value',
+            'category',
+            'approved',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(memoryId);
+      }
+
+      match /tasks/{taskId} {
+        allow get: if isOwner(userId) && isValidId(taskId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(taskId)
+          && isValidTaskEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(taskId)
+          && isValidTaskEntry(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'title',
+            'priority',
+            'completed',
+            'dueLabel',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(taskId);
+      }
+
+      match /history/{historyId} {
+        allow get: if isOwner(userId) && isValidId(historyId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(historyId)
+          && isValidHistoryEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().lastRunAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(historyId)
+          && isValidHistoryEntry(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().lastRunAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'query',
+            'responsePreview',
+            'aiMode',
+            'memoriesUsed',
+            'runCount',
+            'lastRunAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(historyId);
+      }
+
+      match /monitors/{monitorId} {
+        allow get: if isOwner(userId) && isValidId(monitorId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(monitorId)
+          && isValidMonitorTopicEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(monitorId)
+          && isValidMonitorTopicEntry(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'query',
+            'label',
+            'category',
+            'officialOnly',
+            'intervalMinutes',
+            'status',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(monitorId);
+      }
+
+      match /knowledgeDocs/{docId} {
+        allow get: if isOwner(userId) && isValidId(docId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(docId)
+          && isValidKnowledgeDoc(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(docId)
+          && isValidKnowledgeDoc(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'status',
+            'chunkCount',
+            'enabled',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(docId);
+      }
+
+      match /knowledgeChunks/{chunkId} {
+        allow get: if isOwner(userId) && isValidId(chunkId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(chunkId)
+          && isValidKnowledgeChunk(incoming(), userId)
+          && incoming().createdAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId)/knowledgeDocs/$(incoming().docId));
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(chunkId);
+      }
+
+      match /integrations/{integrationId} {
+        allow get: if isOwner(userId) && isValidId(integrationId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(integrationId)
+          && isValidConnectedIntegration(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(integrationId)
+          && isValidConnectedIntegration(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().provider == existing().provider
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'label',
+            'baseUrl',
+            'status',
+            'entityCount',
+            'lastVerifiedAt',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(integrationId);
+      }
+
+      match /auditLogs/{logId} {
+        allow get: if isOwner(userId) && isValidId(logId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(logId)
+          && isValidAuditLog(incoming(), userId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(logId);
+      }
+
+      match /skills/{skillId} {
+        allow get: if isOwner(userId) && isValidId(skillId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(skillId)
+          && isValidSkillEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(skillId)
+          && isValidSkillEntry(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name',
+            'description',
+            'category',
+            'triggerPattern',
+            'instructions',
+            'enabled',
+            'activeVersion',
+            'testStatus',
+            'lastTestNote',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(skillId);
+
+        match /versions/{versionId} {
+          allow get: if isOwner(userId)
+            && isValidId(skillId)
+            && isValidId(versionId)
+            && exists(/databases/$(database)/documents/users/$(userId)/skills/$(skillId));
+          allow list: if isOwner(userId)
+            && isValidId(skillId)
+            && resource.data.userId == request.auth.uid
+            && resource.data.skillId == skillId;
+          allow create: if isOwner(userId)
+            && isValidId(skillId)
+            && isValidId(versionId)
+            && isValidSkillVersion(incoming(), userId, skillId)
+            && incoming().createdAt == request.time
+            && exists(/databases/$(database)/documents/users/$(userId)/skills/$(skillId));
+          allow update: if false;
+          allow delete: if isOwner(userId) && isValidId(skillId) && isValidId(versionId);
+        }
+      }
+
+      match /projects/{projectId} {
+        allow get: if isOwner(userId) && isValidId(projectId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(projectId)
+          && isValidProjectRecord(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(projectId)
+          && isValidProjectRecord(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name',
+            'rootPath',
+            'language',
+            'framework',
+            'status',
+            'lastTestStatus',
+            'lastTestSummary',
+            'snapshotCount',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(projectId);
+      }
+
+      match /bugReports/{reportId} {
+        allow get: if isOwner(userId) && isValidId(reportId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(reportId)
+          && isValidBugReport(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(reportId)
+          && isValidBugReport(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().projectId == existing().projectId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'rootCause',
+            'status',
+            'verificationSummary',
+            'regressionRisk',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(reportId);
+      }
+
+      match /creativeAssets/{assetId} {
+        allow get: if isOwner(userId) && isValidId(assetId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(assetId)
+          && isValidCreativeAsset(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(assetId)
+          && isValidCreativeAsset(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().dimension == existing().dimension
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'title',
+            'category',
+            'exportFormat',
+            'specJson',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(assetId);
+      }
+
+      match /contacts/{contactId} {
+        allow get: if isOwner(userId) && isValidId(contactId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(contactId)
+          && isValidContactRecord(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(contactId)
+          && isValidContactRecord(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name',
+            'phone',
+            'email',
+            'relation',
+            'aliases',
+            'consentToCall',
+            'vip',
+            'source',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(contactId);
+      }
+
+      match /callLogs/{callId} {
+        allow get: if isOwner(userId) && isValidId(callId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(callId)
+          && isValidCallLog(incoming(), userId)
+          && incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isOwner(userId) && isValidId(callId);
+      }
+
+      match /workflows/{workflowId} {
+        allow get: if isOwner(userId) && isValidId(workflowId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(workflowId)
+          && isValidWorkflowEntry(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(workflowId)
+          && isValidWorkflowEntry(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name',
+            'triggerType',
+            'triggerValue',
+            'actionType',
+            'actionPayload',
+            'enabled',
+            'runCount',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(workflowId);
+      }
+
+      match /agentRuns/{runId} {
+        allow get: if isOwner(userId) && isValidId(runId);
+        allow list: if isOwner(userId) && resource.data.userId == request.auth.uid;
+        allow create: if isOwner(userId)
+          && isValidId(runId)
+          && isValidAgentRun(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isOwner(userId)
+          && isValidId(runId)
+          && isValidAgentRun(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'status',
+            'activeRole',
+            'stepCount',
+            'summary',
+            'updatedAt'
+          ]);
+        allow delete: if isOwner(userId) && isValidId(runId);
+      }
+    }
+  }
+}
